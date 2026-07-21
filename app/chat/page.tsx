@@ -125,6 +125,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [showSlowWarning, setShowSlowWarning] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState("en")
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
@@ -206,6 +207,12 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages, scrollToBottom])
+
+  useEffect(() => {
+    if (!isLoading) { setShowSlowWarning(false); return }
+    const t = setTimeout(() => setShowSlowWarning(true), 5000)
+    return () => clearTimeout(t)
+  }, [isLoading])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -921,6 +928,16 @@ export default function ChatPage() {
                       ))}
                     </div>
                   </div>
+                </motion.div>
+              )}
+
+              {showSlowWarning && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-xs text-gray-400 dark:text-gray-500 px-4"
+                >
+                  The server is waking up after inactivity — this first response may take up to 30 seconds...
                 </motion.div>
               )}
 
