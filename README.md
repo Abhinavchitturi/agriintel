@@ -1,5 +1,8 @@
 # AgriIntel — AI-Powered Agricultural Assistant
 
+**Live:** [https://agriintel-phi.vercel.app](https://agriintel-phi.vercel.app)  
+**Backend API:** [https://agriintel-production-935f.up.railway.app](https://agriintel-production-935f.up.railway.app)
+
 An AI chat assistant for Indian farmers, powered by Groq (Llama 3.3 70B) with weather integration and multi-language support.
 
 ## Features

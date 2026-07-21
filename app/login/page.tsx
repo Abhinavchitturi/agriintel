@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Leaf, Eye, EyeOff, AlertCircle, Sparkles } from "lucide-react"
+import { Leaf, Eye, EyeOff, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { dbSignIn, getCurrentProfile } from "@/lib/db/auth"
@@ -45,12 +45,7 @@ export default function LoginPage() {
     }
   }
 
-  const fillDemo = () => {
-    setEmail("farmer@pro.com")
-    setPassword("AgriPro123")
-  }
-
-  if (isLoading) return (
+if (isLoading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <motion.div
         animate={{ rotate: 360 }}
@@ -82,37 +77,7 @@ export default function LoginPage() {
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Sign in to continue farming smarter</p>
         </div>
 
-        {/* Demo credentials box */}
-        <button
-          onClick={fillDemo}
-          className="w-full mb-5 p-4 rounded-xl bg-agri-50 dark:bg-agri-950/50 border border-agri-200 dark:border-agri-800 text-left hover:bg-agri-100 dark:hover:bg-agri-900/50 transition-colors group"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-agri-600 dark:text-agri-400" />
-            <span className="text-sm font-semibold text-agri-700 dark:text-agri-300">
-              Demo Pro Account
-              <span className="ml-2 text-xs font-normal opacity-70 group-hover:opacity-100">
-                — click to auto-fill
-              </span>
-            </span>
-          </div>
-          <div className="text-xs text-agri-600 dark:text-agri-400 space-y-0.5">
-            <div>
-              Email:{" "}
-              <code className="bg-agri-100 dark:bg-agri-900 px-1.5 py-0.5 rounded font-mono">
-                farmer@pro.com
-              </code>
-            </div>
-            <div>
-              Password:{" "}
-              <code className="bg-agri-100 dark:bg-agri-900 px-1.5 py-0.5 rounded font-mono">
-                AgriPro123
-              </code>
-            </div>
-          </div>
-        </button>
-
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-xl">
+<div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
