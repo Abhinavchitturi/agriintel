@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Leaf, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { Leaf, Eye, EyeOff, AlertCircle, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { dbSignUp, getCurrentProfile } from "@/lib/db/auth"
@@ -24,6 +24,7 @@ function SignUpContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [showPayment, setShowPayment] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem("theme")
@@ -58,6 +59,8 @@ function SignUpContent() {
 
     if ("error" in result) {
       setError(result.error)
+    } else if ("needsConfirmation" in result) {
+      setConfirmedEmail(email.trim())
     } else if (wantsPro) {
       setUserId(result.user.id)
       setShowPayment(true)
@@ -65,6 +68,35 @@ function SignUpContent() {
       router.replace("/chat")
     }
   }
+
+  if (confirmedEmail) return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md text-center"
+      >
+        <div className="w-16 h-16 rounded-2xl bg-agri-100 dark:bg-agri-900/40 flex items-center justify-center mx-auto mb-6">
+          <Mail className="w-8 h-8 text-agri-600 dark:text-agri-400" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Check your email</h1>
+        <p className="text-gray-500 dark:text-gray-400 mb-1">
+          We sent a confirmation link to
+        </p>
+        <p className="font-semibold text-gray-800 dark:text-gray-200 mb-6">{confirmedEmail}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+          Click the link in the email to activate your account, then come back and sign in.
+        </p>
+        <Link
+          href="/login"
+          className="inline-flex items-center justify-center w-full py-3 px-6 rounded-xl bg-gradient-to-r from-agri-600 to-agri-700 text-white font-semibold hover:from-agri-700 hover:to-agri-800 transition-all"
+        >
+          Go to Sign In
+        </Link>
+      </motion.div>
+    </div>
+  )
 
   if (isLoading && !showPayment) return (
     <div className="min-h-screen bg-background flex items-center justify-center">

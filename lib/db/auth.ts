@@ -6,7 +6,7 @@ export async function dbSignUp(
   email: string,
   password: string,
   name: string
-): Promise<{ user: Profile } | { error: string }> {
+): Promise<{ user: Profile } | { needsConfirmation: true } | { error: string }> {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -16,8 +16,10 @@ export async function dbSignUp(
   if (error) return { error: error.message }
   if (!data.user) return { error: "Sign-up failed. Please try again." }
 
-  // Profile row is created automatically by the DB trigger.
-  // Read it back so we have the full profile.
+  // Email confirmation required — session is null until the user clicks the link
+  if (!data.session) return { needsConfirmation: true }
+
+  // Auto-confirmed (email confirmation disabled in Supabase settings)
   const profile = await getProfile(data.user.id)
   if (!profile) return { error: "Account created but profile not found." }
   return { user: profile }
