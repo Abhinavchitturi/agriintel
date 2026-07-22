@@ -7,10 +7,17 @@ export async function dbSignUp(
   password: string,
   name: string
 ): Promise<{ user: Profile } | { needsConfirmation: true } | { error: string }> {
+  const siteUrl = typeof window !== "undefined"
+    ? window.location.origin
+    : "https://agriintel-phi.vercel.app"
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { name } },
+    options: {
+      data: { name },
+      emailRedirectTo: `${siteUrl}/auth/confirmed`,
+    },
   })
 
   if (error) return { error: error.message }
