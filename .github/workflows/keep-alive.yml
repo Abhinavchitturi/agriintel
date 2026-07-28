@@ -1,0 +1,66 @@
+name: Supabase keep-alive
+
+# Supabase pauses free-tier projects after 7 days without DATABASE activity.
+# This runs a tiny SELECT twice a week so the inactivity timer never expires.
+#
+# Setup (one time):
+#   Repo -> Settings -> Secrets and variables -> Actions -> New repository secret
+#     SUPABASE_URL              =  https://<your-project-ref>.supabase.co   (no trailing slash)
+#     SUPABASE_PUBLISHABLE_KEY  =  sb_publishable_...
+#
+# Use the PUBLISHABLE key (Project Settings -> API -> "Publishable and secret
+# API keys" tab -> Publishable key). Never the secret / service_role key --
+# that one bypasses row-level security.
+#
+# Then: Actions tab -> "Supabase keep-alive" -> Run workflow (test it manually first).
+
+on:
+  schedule:
+    # 06:00 UTC every Monday and Thursday. Cron in GitHub Actions is ALWAYS UTC.
+    # Two pings a week means one missed run still leaves you inside the 7-day window.
+    - cron: '0 6 * * 1,4'
+  workflow_dispatch:   # adds a manual "Run workflow" button
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Supabase (keeps the Postgres instance awake)
+        run: |
+          echo "Pinging Supabase REST API..."
+          # NOTE: only the apikey header is sent.
+          # New-style publishable keys (sb_publishable_...) are NOT JWTs, so
+          # passing them in "Authorization: Bearer" makes PostgREST fail with
+          # PGRST301 "Expected 3 parts in JWT". Authorization is only for a
+          # logged-in user's JWT. With apikey alone the request runs as `anon`,
+          # which is all the keep-alive needs.
+          HTTP_CODE=$(curl -sS -o /tmp/response.json -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}")
+
+          echo "HTTP status: $HTTP_CODE"
+          echo "Response body:"
+          cat /tmp/response.json
+          echo ""
+
+          # 200 means the query reached Postgres. An empty array [] is fine —
+          # RLS may filter every row, but the query still executed.
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Supabase ping failed with HTTP $HTTP_CODE"
+            echo "401 -> anon key wrong or missing"
+            echo "404 -> table name wrong"
+            echo "403 -> anon role lacks SELECT grant on this table"
+            exit 1
+          fi
+
+          echo "Supabase ping OK."
+
+      - name: Wake Railway backend
+        # Railway free-tier services can sleep independently of Supabase.
+        # Non-blocking: if the backend is down we still want the DB ping to count.
+        continue-on-error: true
+        run: |
+          curl -sS -f --max-time 60 \
+            https://agriintel-production-935f.up.railway.app/api/health \
+            && echo "Backend awake." \
+            || echo "Backend did not respond (Supabase ping above still succeeded)."
