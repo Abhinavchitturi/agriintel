@@ -23,9 +23,12 @@ All chat models are served through the [Groq](https://groq.com) API. AgriIntel w
 | Tier | Persona | Groq model | Purpose | Requests | Reset |
 |------|---------|-----------|---------|----------|-------|
 | Free | **AgriIntel Kisan** ("farmer") | `llama-3.1-8b-instant` | Essential, low-latency farming assistant; short plain-text answers | 20 | 6h |
-| Pro — Standard | **AgriIntel Fasal** ("harvest") | `llama-3.3-70b-versatile` | Fast & accurate for everyday queries | 200 | 3h |
-| Pro — Advanced | **AgriIntel Vriddhi** ("growth") | `deepseek-r1-distill-llama-70b` | Deep reasoning for complex crop & soil analysis | 60 | 3h |
-| Pro — Elite | **AgriIntel Samriddhi** ("prosperity") | `llama-3.1-70b-versatile` | Premium intelligence for precision agriculture | 30 | 3h |
+| Pro — Standard | **AgriIntel Fasal** ("harvest") | `llama-3.3-70b-versatile` | Fast and accurate for everyday queries | 200 | 3h |
+| Pro — Advanced | **AgriIntel Vriddhi** ("growth") | `openai/gpt-oss-120b` | Deep reasoning for complex crop and soil analysis | 60 | 3h |
+| Pro — Elite | **AgriIntel Samriddhi** ("prosperity") | `qwen/qwen3.6-27b` | Multimodal — send a photo of an affected crop for visual diagnosis | 30 | 3h |
+
+Each tier adds a capability rather than just parameter count: speed -> accuracy ->
+reasoning -> vision.
 
 Additional models used outside the chat endpoint:
 
@@ -136,11 +139,45 @@ npm test
 cd backend && python -m pytest tests/ -v
 ```
 
+## Engineering Decisions
+
+### Model IDs live in config, not in the service layer
+Groq deprecates models aggressively — two of the four models this project originally shipped
+with (`deepseek-r1-distill-llama-70b` and `llama-3.1-70b-versatile`) were removed within a year.
+Because every model ID is resolved from `config.py` via environment variables, migrating was an
+env-var change and a redeploy rather than a code change. The backend also verifies its configured
+models against Groq's `/v1/models` endpoint at startup and logs an error if one has disappeared,
+so a removed model surfaces in logs instead of as a user-facing failure.
+
+### Tiers are differentiated by capability, not parameter count
+Ranking tiers purely by model size produces odd results — a newer 27B model can outperform an
+older 70B one, and users cannot tell what they are paying for. Each tier now adds a distinct
+capability: Kisan optimises for latency, Fasal for general accuracy, Vriddhi for multi-step
+reasoning, and Samriddhi for image input, letting a farmer photograph an affected crop.
+
+### Quotas are enforced server-side
+Per-model request limits and reset windows are checked in the FastAPI layer against the Supabase
+`usage` table, not in the client. A client-side limit is a suggestion; anyone can open DevTools
+and bypass it. The same reasoning applies to tier gating — the backend re-reads the user's plan
+from Postgres on every request rather than trusting a flag sent by the frontend.
+
+### Row-level security instead of application-level checks
+User data isolation is enforced by Postgres RLS policies rather than `WHERE user_id = ?` filters
+in application code. An application-level check fails open if a query is written incorrectly; an
+RLS policy fails closed, and the guarantee holds even for requests that bypass the API entirely.
+
+### Free and Pro responses are shaped differently on purpose
+Free responses are capped near 200 tokens of plain text at temperature 0.3 — a farmer on a slow
+connection wants a short, direct answer. Pro responses run to 1500 tokens of structured Markdown
+with RAG grounding and full weather context, where the added latency buys real depth.
+
 ## Deployment
 
 - **Frontend** → [Vercel](https://vercel.com) (import GitHub repo, add env vars)
 - **Backend** → [Railway](https://railway.app) (connect repo, set root to `backend/`, add env vars)
-- A GitHub Actions workflow (.github/workflows/keep-alive.yml) runs twice weekly — it queries Supabase to prevent the free-tier project from being paused after 7 days of database inactivity, and pings the Railway backend to keep it warm.
+- A GitHub Actions workflow (`.github/workflows/keep-alive.yml`) runs twice weekly. It queries
+  Supabase to stop the free-tier project being paused after 7 days of database inactivity, and
+  pings the Railway backend to keep it warm.
 
 ## API Endpoints
 

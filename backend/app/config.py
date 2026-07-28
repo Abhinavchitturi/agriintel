@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     GROQ_MODEL_FREE: str = "llama-3.1-8b-instant"
     GROQ_MODEL_PRO: str = "llama-3.3-70b-versatile"
     GROQ_MODEL_FASAL: str = "llama-3.3-70b-versatile"
-    GROQ_MODEL_VRIDDHI: str = "deepseek-r1-distill-llama-70b"
-    GROQ_MODEL_SAMRIDDHI: str = "llama-3.1-70b-versatile"
+    GROQ_MODEL_VRIDDHI: str = "openai/gpt-oss-120b"
+    GROQ_MODEL_SAMRIDDHI: str = "qwen/qwen3.6-27b"
     GROQ_MAX_TOKENS: int = 4096
     GROQ_TEMPERATURE: float = 0.3
     

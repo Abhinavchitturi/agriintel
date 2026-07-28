@@ -313,5 +313,18 @@ class GroqService:
             latency_ms=150.0 if plan == "free" else 450.0,
         )
 
+# backend/app/services/groq_service.py
+import logging
+log = logging.getLogger(__name__)
 
+async def verify_models(client, configured: dict[str, str]) -> None:
+    """Warn at startup if any configured model is no longer served by Groq."""
+    try:
+        available = {m.id for m in (await client.models.list()).data}
+    except Exception as exc:
+        log.warning("Could not verify Groq models: %s", exc)
+        return
+    for tier, model_id in configured.items():
+        if model_id not in available:
+            log.error("Groq model %r for tier %r is no longer available", model_id, tier)
 groq_service = GroqService()
