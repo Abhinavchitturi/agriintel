@@ -140,7 +140,7 @@ cd backend && python -m pytest tests/ -v
 
 - **Frontend** → [Vercel](https://vercel.com) (import GitHub repo, add env vars)
 - **Backend** → [Railway](https://railway.app) (connect repo, set root to `backend/`, add env vars)
-- A GitHub Actions workflow (`.github/workflows/keep-alive.yml`) periodically pings the backend to prevent Railway's free-tier instance from idling.
+- A GitHub Actions workflow (.github/workflows/keep-alive.yml) runs twice weekly — it queries Supabase to prevent the free-tier project from being paused after 7 days of database inactivity, and pings the Railway backend to keep it warm.
 
 ## API Endpoints
 
